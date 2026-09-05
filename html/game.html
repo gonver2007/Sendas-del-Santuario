@@ -10,6 +10,20 @@
 </head>
 <body class="juego">
 
+<!-- El telón de carga. Va lo primero de la página, y no dentro de la escena,
+     por una razón de tiempo: cuando el navegador llega a los guiones del final
+     esto ya está pintado, así que el rato que se tarda en levantar la senda se
+     pasa mirando el farolillo y no un marcador a cero sobre negro. Lo retira
+     vista.js cuando todo está en pie, y nunca antes de su espera mínima. -->
+<div id="cargando">
+    <div class="farol" aria-hidden="true"><span class="cuerda"></span><span class="cuerpo"></span></div>
+    <div class="rotulo"><span>参道</span></div>
+    <h1 data-t="carga.titulo">CARGANDO</h1>
+    <p class="lema" data-t="carga.lema">El farolillo se enciende. Aguarda un momento.</p>
+    <div class="cinta"><i id="cargandoAvance"></i></div>
+    <p class="paso" id="cargandoPaso" data-t="carga.aceros">Afilando los aceros</p>
+</div>
+
 <div id="escena">
     <canvas id="vista"></canvas>
     <!-- El marcador entero habla el idioma del resto del juego: tablillas de
@@ -36,6 +50,11 @@
         <!-- dónde se anda: la senda y el nombre de la comarca, que lo pone
              biomas.js y no esta página -->
         <div id="estadoNivel" class="tablilla"></div>
+
+        <!-- El contador de fotogramas, si se ha pedido en los ajustes. Va en
+             el hud y no suelto por ahí para caer bajo la cédula sin taparla y
+             para crecer con la misma regla que el resto del marcador. -->
+        <div id="fps" class="tablilla" hidden>fps: 0</div>
     </div>
     <!-- El plano de la senda. Se ve entero desde el primer paso: no hay niebla
          que levantar, y la puerta, los elixires y lo que anda suelto están

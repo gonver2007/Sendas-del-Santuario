@@ -47,10 +47,17 @@ const P = {
     // luz cálida de los farolillos de papel
     papel: '#ffcf72', papelLuz: '#fff0c4', bermellon: '#c8402f',
 
-    // el héroe y su acero
-    traje: '#e6ecf7', trajeLuz: '#ffffff', trajeSombra: '#a3b3cc',
-    casco: '#e0453f', cascoLuz: '#ff7a63', cascoSombra: '#8f221d',
-    bufanda: '#3a6fd8', bufandaLuz: '#6b9cf2', bufandaSombra: '#24468f',
+    // El héroe: un samurái de armadura de laca azul noche, atada con cordón
+    // rojo y ribeteada de oro, con el peto de cuero crudo y la careta granate.
+    // No es blanco por una razón de fondo: lo blanco de la senda es lo que
+    // hace daño -el filo, la estela, el destello del golpe-, y el que lo lleva
+    // puesto se confundía con ello.
+    laca: '#2c3b5e', lacaLuz: '#455780', lacaSombra: '#18213a',
+    cordon: '#a8352b', cordonLuz: '#d2564a',
+    cuero: '#cfc2a0', cueroLuz: '#eae1c6', cueroSombra: '#96895f',
+    menpo: '#7b2b26', menpoLuz: '#a8453c',
+    // la bota levanta el tono sobre la laca: es lo que hace visible la zancada
+    bota: '#5a6484', botaLuz: '#828cab',
     acero: '#dfe9ff', aceroSombra: '#8f9fc4',
     oro: '#e8b352', oroLuz: '#ffd784', oroSombra: '#9a6f2b',
 
@@ -134,6 +141,33 @@ function brillo(g, cx, cy, rx, ry, giro = 0, alfa = 0.8) {
     g.fillStyle = '#fff';
     g.beginPath(); g.ellipse(cx, cy, rx, ry, giro, 0, 6.2832); g.fill();
     g.restore();
+}
+
+// Y para lo que no es un bulto sino un miembro -brazos, piernas, la bufanda-,
+// el pincel que ya usan las bestias: una curva recorrida a discos, del gordo al
+// fino, primero en tinta y luego en color. Está aquí otra vez y no compartido
+// porque bestias.js lo tiene guardado dentro de su propio ámbito; sacarlo fuera
+// para que lo vieran los dos chocaría con estos nombres, que son globales.
+const punto = (x, y) => ({ x, y });
+const disco = (g, x, y, r) => { g.beginPath(); g.arc(x, y, Math.max(r, 0.15), 0, 6.2832); g.fill(); };
+
+function enCurva(p, t) {
+    const u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
+    return { x: a * p[0].x + b * p[1].x + c * p[2].x + d * p[3].x,
+             y: a * p[0].y + b * p[1].y + c * p[2].y + d * p[3].y };
+}
+
+function apendice(g, p, base, r0, r1, filo = 1.2, luz) {
+    const largo = Math.hypot(p[3].x - p[0].x, p[3].y - p[0].y) +
+                  Math.hypot(p[1].x - p[0].x, p[1].y - p[0].y);
+    const n = Math.max(16, Math.ceil(largo / Math.max(r1, 0.25) * 1.6));
+    for (let paso = 0; paso < (luz ? 3 : 2); paso++)
+        for (let i = 0; i <= n; i++) {
+            const t = i / n, q = enCurva(p, t), r = r0 + (r1 - r0) * t;
+            if (paso === 0) { g.fillStyle = P.tinta; disco(g, q.x, q.y, r + filo); }
+            else if (paso === 1) { g.fillStyle = base; disco(g, q.x, q.y, r); }
+            else if (t < 0.7) { g.fillStyle = luz; disco(g, q.x - r * 0.3, q.y - r * 0.35, r * 0.42); }
+        }
 }
 
 // ============================================================
@@ -1602,36 +1636,6 @@ function nuevoSprite(pintar) {
 function prepararSprites() {
     sprites = {
         // Todas las figuras miran a la derecha; se rotan al dibujarlas.
-        heroe: nuevoSprite((g, c) => {
-            // bufanda al viento, por detrás de todo
-            g.save();
-            g.fillStyle = P.tinta;
-            g.beginPath();
-            g.moveTo(c - 4, c - 5); g.quadraticCurveTo(c - 20, c - 14, c - 26, c - 6);
-            g.quadraticCurveTo(c - 18, c - 4, c - 4, c + 2); g.fill();
-            g.fillStyle = P.bufanda;
-            g.beginPath();
-            g.moveTo(c - 5, c - 5); g.quadraticCurveTo(c - 19, c - 12.5, c - 24, c - 6);
-            g.quadraticCurveTo(c - 17, c - 4, c - 5, c + 1); g.fill();
-            g.restore();
-
-            pieza(g, c - 4, c, 15, 13, P.traje, P.trajeLuz, P.trajeSombra);       // coraza
-            pieza(g, c - 7, c - 11, 6, 5, P.traje, P.trajeLuz, P.trajeSombra, -0.5, 2.2);
-            pieza(g, c - 7, c + 11, 6, 5, P.traje, P.trajeLuz, P.trajeSombra, 0.5, 2.2);
-            pieza(g, c - 2, c, 8, 11, P.bufanda, P.bufandaLuz, P.bufandaSombra, 0, 2.2);  // peto azul
-
-            pieza(g, c + 5, c, 9.5, 9, P.casco, P.cascoLuz, P.cascoSombra);       // casco
-            g.fillStyle = P.tinta;                                                // cresta blanca
-            g.beginPath(); g.moveTo(c + 2, c - 2); g.lineTo(c + 17, c - 4); g.lineTo(c + 17, c + 4);
-            g.lineTo(c + 2, c + 2); g.closePath(); g.fill();
-            g.fillStyle = P.trajeLuz;
-            g.beginPath(); g.moveTo(c + 3, c - 1.5); g.lineTo(c + 15, c - 3); g.lineTo(c + 15, c + 3);
-            g.lineTo(c + 3, c + 1.5); g.closePath(); g.fill();
-            pieza(g, c + 3, c - 8, 3.5, 3, P.casco, P.cascoLuz, null, -0.6, 2);   // orejeras
-            pieza(g, c + 3, c + 8, 3.5, 3, P.casco, P.cascoLuz, null, 0.6, 2);
-            brillo(g, c + 2, c - 5, 3.4, 2.2, -0.6, 0.75);
-        }),
-
         // Las armas se dibujan en aceros.js, que es de donde las saca también
         // la armería: así lo que se ve en el panel es lo que se lleva en la mano
         katana: nuevoSprite(ACEROS.dibujos.katana),
@@ -1641,12 +1645,16 @@ function prepararSprites() {
         nodachi: nuevoSprite(ACEROS.dibujos.nodachi),
         kusarigama: nuevoSprite(ACEROS.dibujos.kusarigama),
 
+        // Va a juego con la armadura, y no en laca roja como antes: rojo era el
+        // casco del héroe de entonces, y ahora lo rojo suyo son los cuernos del
+        // kabuto. Dos rojos encimados delante de la cara no dejaban ver ninguno.
         escudo: nuevoSprite((g, c) => {
-            pieza(g, c, c, 7, 14, P.bermellon, '#e8674f', '#8d2517', 0, 2.6);     // laca roja
-            g.strokeStyle = P.oroLuz; g.lineWidth = 1.8;                          // filete dorado
+            pieza(g, c, c, 7, 14, P.laca, P.lacaLuz, P.lacaSombra, 0, 2.6);       // laca azul
+            g.strokeStyle = P.oro; g.lineWidth = 1.8;                             // filete dorado
             g.beginPath(); g.ellipse(c, c, 4.6, 11, 0, 0, 6.2832); g.stroke();
-            pieza(g, c, c, 3, 3, P.oro, P.oroLuz, P.oroSombra, 0, 1.6);           // emblema
-            brillo(g, c - 2, c - 5, 1.8, 4.5, 0, 0.5);
+            pieza(g, c, c, 3.2, 3.2, P.cordon, P.cordonLuz, null, 0, 1.6);        // el mon, en rojo
+            pieza(g, c, c, 1.3, 1.3, P.oro, P.oroLuz, null, 0, 0.8);
+            brillo(g, c - 2, c - 5, 1.8, 4.5, 0, 0.45);
         }),
 
         elixir: nuevoSprite((g, c) => {
@@ -1656,9 +1664,207 @@ function prepararSprites() {
         })
     };
 
-    // Las bestias no se preparan aquí: se dibujan a código en cada cuadro y su
-    // trazo vive en su ficha, junto a sus cifras. Añadir una es añadirla allí y
-    // ya sale al paso.
+    // Aquí solo queda lo que no cambia de forma: lo que se empuña y lo que se
+    // bebe. Ni las bestias ni el héroe se hornean, que los tres tienen pose y
+    // paso y se dibujan a código en cada cuadro; el trazo de cada bestia vive
+    // en su ficha, y el del héroe, unas líneas más abajo.
+}
+
+// ============================================================
+//  El héroe
+// ============================================================
+// Se dibuja a código en cada cuadro, igual que las bestias y por lo mismo: un
+// muñeco horneado una sola vez no sabe más que botar, y lo que hace falta es
+// verle dar la zancada, tirar el tajo, plantarse detrás del escudo y encogerse
+// cuando le entran. Va trazado sobre el mismo cuadro de 56 y mirando a la
+// derecha, como todas las figuras de la casa.
+//
+// Las manos no las decide la figura: se las pasa quien la pinta, que es el que
+// sabe por dónde va la hoja y dónde está el escudo en este fotograma. Así el
+// brazo y el acero no se despegan nunca, por mucho que barra el tajo.
+
+// Manda lo recibido sobre todo lo demás -si te entran mientras descargas, lo
+// que hay que ver es que te han acertado-, y cubrirse sobre atacar, que con el
+// escudo alzado no se pega.
+function poseDeHeroe(j) {
+    if (j.herido > 0) return 'dano';
+    if (j.cubriendo) return 'cubierto';
+    if (j.golpe > 0) return 'ataque';
+    return j.andando ? 'andar' : 'quieto';
+}
+
+// La misma cuenta que la de las bestias y con las mismas medidas: una vuelta
+// entera de piernas cada cuatro zancadas de su propio bulto. Como se cuenta por
+// camino andado y no por tiempo, correr acelera el paso él solo.
+function faseDeHeroe(j) {
+    return j.andado / (j.r * ZANCADA * PASOS_POR_VUELTA) * 6.2832;
+}
+
+// Dónde caen las manos, en el cuadro de 56. La diestra va sobre el puño del
+// acero, así que gira y se adelanta exactamente igual que él; la zurda, detrás
+// del escudo, esté al costado o alzado de frente.
+function manosDelHeroe(j, barrido, empuje) {
+    const c = SPR / 2;
+    const s = Math.sin(barrido), k = Math.cos(barrido);
+    const gx = 2.5, gy = 11.5;              // el puño con la hoja en reposo
+    const e = empuje / ESCALA_SPR;          // lo que la adelanta el tajo, en el cuadro
+    return {
+        mano: punto(c + gx * k - gy * s + e * k, c + gx * s + gy * k + e * s),
+        escudo: j.cubriendo ? punto(c + 9.5, c - 1.5) : punto(c + 2, c - 7)
+    };
+}
+
+// La marcha va aparte de la pose porque son dos cosas distintas: se anda
+// mientras se descarga el tajo y mientras se aguanta el escudo, y el cuerpo
+// tiene que seguir yendo aunque de cintura para arriba esté en otra cosa. Trae
+// las dos: si anda -que es lo que le da el vaivén- y si corre, que es lo único
+// que le saca los pies.
+function figuraHeroe(g, c, pose, fase, marcha, manos) {
+    const ataca = pose === 'ataque', cubierto = pose === 'cubierto';
+    const herido = pose === 'dano';
+    const vaiven = marcha.anda ? Math.sin(fase) : 0;
+    const paso = marcha.anda ? Math.cos(fase) : 0;
+    // se echa adelante al descargar, atrás al recibir, y cubierto se planta un
+    // paso por detrás del escudo
+    const cx = c + (ataca ? 2 : herido ? -2.6 : cubierto ? -1.2 : 0);
+    const cy = c + vaiven * 0.5;
+
+    // ---------- la segunda espada, envainada ----------
+    // El daishō: la larga va en la mano y la corta se queda en la cadera. Cruza
+    // por detrás, que es donde no estorba, y bailotea con el paso. Hace lo que
+    // antes hacía la bufanda -decir hacia dónde mira y ponerle aire- pero es lo
+    // que un samurái lleva de verdad encima.
+    const saya = [punto(cx - 2, cy - 4), punto(cx - 9, cy - 7 - vaiven * 0.9),
+                  punto(cx - 16, cy - 10 - vaiven * 1.6), punto(cx - 22, cy - 12 - vaiven * 2.2)];
+    apendice(g, saya, P.lacaSombra, 2, 1.5, 1.3, P.laca);
+    const boca = enCurva(saya, 0.12);
+    pieza(g, boca.x, boca.y, 1.7, 1.5, P.oro, P.oroLuz, P.oroSombra, 0, 1.1);   // la boca de la vaina
+    const lazo = enCurva(saya, 0.34);
+    g.strokeStyle = P.cordon; g.lineWidth = 1.4;                                // el sageo
+    g.beginPath(); g.moveTo(lazo.x, lazo.y - 1.6); g.lineTo(lazo.x + 1.4, lazo.y + 2.2); g.stroke();
+
+    // ---------- las piernas ----------
+    // Solo a la carrera. Ni plantado ni andando se le ven: desde arriba, a un
+    // samurái que va a su paso se los come la faldilla del dō, y unos pies ahí
+    // detrás yendo despacio parecían un trozo suelto de la figura. Corriendo sí
+    // salen, y salir es medio decir que corre.
+    //
+    // Salen por detrás y no por el costado, que el costado se lo comen la coraza
+    // y las hombreras. El hakama va de la laca de la armadura y solo la bota
+    // levanta el tono, que es lo que hace visible la zancada.
+    //
+    // Cubriéndose no hay carrera que valga -la mazmorra apaga una con la otra-,
+    // así que aquí dentro no hay que mirarlo.
+    if (marcha.corre) {
+        const zancada = paso * (ataca ? 1.5 : 4);
+        for (const lado of [-1, 1]) {
+            const d = lado > 0 ? zancada : -zancada;
+            const pie = punto(cx - 14 + d, cy + lado * 10);
+            apendice(g, [punto(cx - 6, cy + lado * 4), punto(cx - 10, cy + lado * 7.5),
+                         punto(cx - 12.5 + d * 0.6, cy + lado * 9.2), pie],
+                     P.laca, 2.5, 2, 1.4, P.lacaLuz);
+            pieza(g, pie.x, pie.y, 3.2, 2.3, P.bota, P.botaLuz, null, lado * 0.3, 1.5);
+        }
+    }
+
+    // ---------- el dō ----------
+    // Laca azul noche por fuera y cuero crudo el peto, con las hiladas de cordón
+    // rojo cruzándolo: es el lamelar, y a tamaño de juego es lo único que se le
+    // ve del despiece, así que va marcado sin miedo.
+    pieza(g, cx - 4, cy, 13, 11.5, P.laca, P.lacaLuz, P.lacaSombra);
+    g.save();
+    g.beginPath(); g.ellipse(cx - 4, cy, 13, 11.5, 0, 0, 6.2832); g.clip();
+    g.strokeStyle = P.cordon; g.lineWidth = 1.5; g.lineCap = 'butt';            // las hiladas
+    for (let i = -2; i <= 2; i++) {
+        const y = cy + i * 3.7;
+        g.beginPath(); g.moveTo(cx - 17, y); g.lineTo(cx + 9, y); g.stroke();
+    }
+    g.strokeStyle = P.cuero; g.lineWidth = 2.8;                                 // el obi, dando la vuelta
+    g.beginPath(); g.ellipse(cx - 4, cy, 10.4, 9.1, 0, 0, 6.2832); g.stroke();
+    g.strokeStyle = P.cueroLuz; g.lineWidth = 0.9;
+    g.beginPath(); g.ellipse(cx - 4, cy, 11.1, 9.7, 0, -2.5, -0.7); g.stroke();
+    g.restore();
+    g.strokeStyle = P.oro; g.lineWidth = 1.3;                                   // el filete del canto
+    g.beginPath(); g.ellipse(cx - 4, cy, 12.4, 10.9, 0, -1.15, 1.15); g.stroke();
+
+    // ---------- los brazos ----------
+    // Cada uno acaba donde le han dicho: el diestro en el puño del acero y el
+    // zurdo detrás del escudo. El codo se comba hacia fuera, que un brazo recto
+    // de hombro a mano no parece un brazo.
+    const brazo = (m, lado) => {
+        const hx = cx - 3, hy = cy + lado * 8;
+        const dx = m.x - hx, dy = m.y - hy;
+        const codo = punto((hx + m.x) / 2 - dy * 0.18 * lado,
+                           (hy + m.y) / 2 + dx * 0.18 * lado);
+        apendice(g, [punto(hx, hy), codo, codo, m], P.laca, 2.4, 1.9, 1.4, P.lacaLuz);
+        pieza(g, m.x, m.y, 2.3, 2, P.cuero, P.cueroLuz, P.cueroSombra, 0, 1.3);  // el puño
+    };
+    brazo(manos.escudo, -1);
+    brazo(manos.mano, 1);
+
+    // ---------- las sode ----------
+    // Las paletas de los hombros, que son lo que más ancho le hace desde arriba.
+    // Van con su hilada de cordón y su canto de oro, como el dō.
+    for (const lado of [-1, 1]) {
+        const oy = cy + lado * 10.5;
+        pieza(g, cx - 4, oy, 6.5, 5, P.laca, P.lacaLuz, P.lacaSombra, lado * 0.4, 2.4);
+        g.save();
+        g.beginPath(); g.ellipse(cx - 4, oy, 6.5, 5, lado * 0.4, 0, 6.2832); g.clip();
+        g.strokeStyle = P.cordon; g.lineWidth = 1.3;
+        g.beginPath(); g.moveTo(cx - 11, oy - lado * 1.4); g.lineTo(cx + 3, oy - lado * 2.6); g.stroke();
+        g.restore();
+        // un remache de oro y nada más: el oro de la figura es la media luna del
+        // casco, y tres medias lunas doradas no dejan ver ninguna
+        pieza(g, cx - 7.5, oy + lado * 3, 1.2, 1.1, P.oro, P.oroLuz, null, 0, 0.9);
+    }
+
+    // ---------- el kabuto ----------
+    const giroCabeza = herido ? -0.3 : vaiven * 0.06;
+    g.save();
+    g.translate(cx + 5, cy); g.rotate(giroCabeza); g.translate(-(cx + 5), -cy);
+    // el shikoro, la faldilla que le cubre la nuca, asomando por detrás
+    pieza(g, cx + 2.5, cy, 9.6, 9.8, P.lacaSombra, P.laca, null, 0, 2.6);
+    // la cazuela y su arandela de oro
+    pieza(g, cx + 6, cy, 7.8, 7.4, P.laca, P.lacaLuz, P.lacaSombra, 0, 2.4);
+    pieza(g, cx + 5, cy, 1.8, 1.7, P.oro, P.oroLuz, P.oroSombra, 0, 1.1);
+    // el menpo, la careta, que asoma por delante de todo
+    pieza(g, cx + 13.5, cy, 3.8, 3.3, P.menpo, P.menpoLuz, null, 0, 2);
+    // los kuwagata: los dos cuernos rojos, saliendo por detrás de la media luna
+    for (const lado of [-1, 1]) {
+        const r0 = punto(cx + 8, cy + lado * 4.5);
+        apendice(g, [r0, punto(r0.x + 5, r0.y + lado * 3.5),
+                     punto(r0.x + 9, r0.y + lado * 4.5), punto(r0.x + 12, r0.y + lado * 3)],
+                 P.cordon, 1.9, 0.5, 1.2, P.cordonLuz);
+    }
+    // el maedate: la media luna de oro sobre la frente, que es lo que se le ve
+    // antes que nada desde arriba y lo que lo separa de cualquier otro bulto
+    g.lineCap = 'round';
+    g.strokeStyle = P.tinta; g.lineWidth = 5.4;
+    g.beginPath(); g.arc(cx + 5, cy, 8.2, -1.3, 1.3); g.stroke();
+    g.strokeStyle = P.oro; g.lineWidth = 3.2;
+    g.beginPath(); g.arc(cx + 5, cy, 8.2, -1.3, 1.3); g.stroke();
+    g.strokeStyle = P.oroLuz; g.lineWidth = 1.1;
+    g.beginPath(); g.arc(cx + 5, cy, 8.9, -1.15, -0.1); g.stroke();
+    brillo(g, cx + 3.5, cy - 4.5, 2.6, 1.8, -0.6, 0.5);
+    g.restore();
+}
+
+// La figura, puesta a su tamaño. Se pinta derecha sobre la senda y no en un
+// lienzo aparte -que es lo que sí hacen las bestias- porque aquí no hay nada
+// que recortar a la silueta ya hecha: al héroe lo que lo aclara al recibir es
+// el velo de toda la pantalla, no una mano de blanco suya.
+//
+// Va dentro del ctx ya llevado a su sitio y girado a lo que mira, que es donde
+// antes se plantaba la lámina.
+function pintarHeroe(j, barrido, empuje) {
+    const s = SPR * ESCALA_SPR;
+    ctx.save();
+    ctx.scale(s / SPR, s / SPR);
+    ctx.translate(-SPR / 2, -SPR / 2);
+    figuraHeroe(ctx, SPR / 2, poseDeHeroe(j), faseDeHeroe(j),
+                { anda: j.andando, corre: j.corriendo },
+                manosDelHeroe(j, barrido, empuje));
+    ctx.restore();
 }
 
 // ============================================================
@@ -2910,10 +3116,10 @@ function dibujarHeroe(j) {
         ctx.restore();
     }
 
+    // El bote de antes no hace falta: ahora el paso se ve en las piernas, y
+    // el cuerpo lo acompaña desde dentro de la propia figura.
     ctx.globalAlpha = J.muerto ? 0.35 : (j.invulnerable > 0 ? 0.55 : 1);
-    const cadenciaPaso = j.corriendo ? 21 : 14;
-    const paso = j.andando ? Math.sin(J.tiempo * cadenciaPaso) * (j.corriendo ? 1.5 : 0.9) : 0;
-    ctx.drawImage(sprites.heroe, -s / 2, -s / 2 + paso, s, s);
+    pintarHeroe(j, barrido, empuje);
 
     // el escudo va en el brazo contrario a la hoja; al cubrirse se alza de frente
     ctx.translate(j.cubriendo ? s * 0.231 : s * 0.046, j.cubriendo ? 0 : -s * 0.169);
@@ -2932,7 +3138,8 @@ function estelaDeImpulso(px, py, j) {
         ctx.globalAlpha = 0.22 * k * (1 - i / 4);
         ctx.translate(px - Math.cos(j.mira) * i * s * 0.138, py - Math.sin(j.mira) * i * s * 0.138);
         ctx.rotate(j.mira);
-        ctx.drawImage(sprites.heroe, -s / 2, -s / 2, s, s);
+        // con la hoja en reposo: lo que se deja atrás es el cuerpo, no el tajo
+        pintarHeroe(j, 0, 0);
         ctx.restore();
     }
     // líneas de velocidad, marca de la casa en la animación japonesa
@@ -4028,7 +4235,14 @@ addEventListener('message', ev => {
     // esta es la única copia que la partida verá al reiniciar.
     Ajustes.guardar({ volumen: aviso.volumen, musica: aviso.musica,
                       efectos: aviso.efectos, jugador: aviso.jugador,
-                      hud: aviso.hud, idioma: aviso.idioma });
+                      hud: aviso.hud, juego: aviso.juego, fps: aviso.fps,
+                      idioma: aviso.idioma });
+    aplicarVistaFps();
+    // El tamaño del juego se ve al momento. No se compara con lo que había
+    // guardado -cuando el marco sí comparte almacén, para cuando llega el
+    // aviso ya lo ha pisado él y parecerían iguales-, sino con el lienzo que
+    // tenemos delante, que es lo único que no miente.
+    aplicarZoomJuego();
 });
 
 // no hay nada que anotar al salir: el arma y las esquirlas se guardan solas
@@ -4135,12 +4349,35 @@ function leerEntrada() {
 // ============================================================
 //  Bucle principal
 // ============================================================
+// El techo de la senda: 144 cuadros por segundo y ni uno más. No es un ajuste
+// ni se toca desde ninguna parte -por eso es una constante y no una preferencia-:
+// por encima de ahí no se gana nada que el ojo alcance a ver y sí se calienta
+// la máquina de balde. En pantallas de 144 o menos no se nota, que ya no daban
+// para más; en las de 240 es donde se pone el freno.
+const FPS_TOPE = 144;
+const PULSO_TOPE = 1000 / FPS_TOPE;
+
 let ultimo = performance.now();
+let proximoCuadro = 0;        // cuándo toca el siguiente, en el reloj del navegador
 let hpPrevio = 0;
 
 function bucle(ahora) {
-    const dt = Math.min(0.05, (ahora - ultimo) / 1000);   // sin saltos si se pierde el foco
+    // se pide el siguiente lo primero: aunque este cuadro se deje pasar, la
+    // cadena no puede romperse
+    requestAnimationFrame(bucle);
+
+    // ¿todavía no toca? Ni se mueve nada ni se pinta: eso es el tope.
+    if (ahora < proximoCuadro) return;
+    // La cita siguiente se cuenta desde la que tocaba y no desde ahora, que si
+    // no el tope se iría quedando corto cuadro a cuadro. Tras un parón -pestaña
+    // dormida, ventana escondida- se vuelve a poner en hora.
+    proximoCuadro += PULSO_TOPE;
+    if (proximoCuadro < ahora) proximoCuadro = ahora + PULSO_TOPE;
+
+    const hueco = ahora - ultimo;                         // lo que tardó este cuadro, en ms
+    const dt = Math.min(0.05, hueco / 1000);              // sin saltos si se pierde el foco
     ultimo = ahora;
+    contarFotograma(ahora);
     dtVista = dt;
 
     actualizar(dt, leerEntrada());
@@ -4154,7 +4391,6 @@ function bucle(ahora) {
     pintar();
     pintarHud();
     pintarMinimapa();
-    requestAnimationFrame(bucle);
 }
 
 function comenzar() {
@@ -4165,12 +4401,78 @@ function comenzar() {
     flash = 0; sacudida = 0;
 }
 
+// Cuánto acerca la cámara el ajuste de tamaño del juego, de 0.9 a 1.1. Se
+// pregunta cada vez y no se guarda: la ventana de ajustes puede cambiarlo en
+// mitad de la partida.
+function zoomJuego() {
+    const z = (typeof Ajustes !== 'undefined') ? Number(Ajustes.leer().juego) : 100;
+    return (Number.isFinite(z) ? Math.min(110, Math.max(90, z)) : 100) / 100;
+}
+
+// Qué lienzo pide ese zoom. Al revés de lo que parece: a más zoom, menos
+// lienzo, que luego se estira igual hasta tapar la pantalla y todo sale mayor.
+const anchoConZoom = z => Math.round(ANCHO_JUEGO / z);
+const altoConZoom  = z => Math.round(ALTO_JUEGO / z);
+
+// Pone el lienzo al zoom que toque, si no lo está ya. Se mira el lienzo y no
+// el ajuste porque el ajuste puede haberse guardado antes de que nos avisen.
+function aplicarZoomJuego() {
+    if (anchoConZoom(zoomJuego()) === AN) return;
+    ajustarLienzo();
+    ajustarEscalaLienzo();
+}
+
+// ============================================================
+//  El contador de fotogramas
+//  Una cifra: a cuántos cuadros por segundo va yendo la partida. Lo que da la
+//  pantalla no se enseña, que ni el navegador lo dice ni se puede adivinar
+//  cuando el juego no llega a seguirle el paso.
+// ============================================================
+const cajaFps = document.getElementById('fps');
+
+let fpsAhora = 0;               // a lo que va la partida ahora mismo
+let fpsCuadros = 0, fpsDesde = 0;
+let fpsVisible = false;
+
+const rotuloFps = () => 'fps: ' + fpsAhora;
+
+// Se repinta dos veces por segundo: cuadro a cuadro la cifra sería ilegible.
+// Solo cuenta los cuadros que de verdad se pintan, no los que el tope deja pasar.
+function contarFotograma(ahora) {
+    if (!fpsVisible) return;
+
+    fpsCuadros++;
+    if (!fpsDesde) { fpsDesde = ahora; return; }
+    if (ahora - fpsDesde < 500) return;
+
+    // La cuenta se cierra contra el tope: en una pantalla muy rápida un
+    // medio segundo puede pillar un cuadro de más y sacar un 145 que no
+    // existe, y el techo de la senda son 144.
+    fpsAhora = Math.min(FPS_TOPE, Math.round(fpsCuadros * 1000 / (ahora - fpsDesde)));
+    fpsCuadros = 0; fpsDesde = ahora;
+    if (cajaFps) cajaFps.textContent = rotuloFps();
+}
+
+// Encender o apagar el rótulo según lo que digan los ajustes.
+function aplicarVistaFps() {
+    fpsVisible = !!(typeof Ajustes !== 'undefined' && Ajustes.leer().fps);
+    if (!cajaFps) return;
+    cajaFps.hidden = !fpsVisible;
+    // se estrena con la última cuenta buena, no con el 0 del html
+    if (fpsVisible) cajaFps.textContent = rotuloFps();
+    else { fpsCuadros = 0; fpsDesde = 0; }
+}
+
 // El lienzo tiene siempre la misma resolución (ANCHO_JUEGO x ALTO_JUEGO): así
-// se ve igual de grande sin importar la pantalla. Solo se llama una vez, al
-// arrancar; lo que cambia con la ventana es la escala visual, ver abajo.
+// se ve igual de grande sin importar la pantalla. Lo único que la mueve es el
+// zoom del jugador, y al revés de lo que parece: a más zoom, menos lienzo, que
+// luego se estira hasta tapar la pantalla igual y todo sale más grande.
+// Se llama al arrancar y cada vez que ese ajuste cambia; lo que cambia con la
+// ventana es la escala visual, ver abajo.
 function ajustarLienzo() {
-    AN = lienzo.width = ANCHO_JUEGO;
-    AL = lienzo.height = ALTO_JUEGO;
+    const z = zoomJuego();
+    AN = lienzo.width = anchoConZoom(z);
+    AL = lienzo.height = altoConZoom(z);
     capaVineta = null;
     lienzoSombra = null; sctx = null;
     raton.x = AN / 2; raton.y = AL / 2;
@@ -4189,8 +4491,113 @@ function ajustarEscalaLienzo() {
 }
 addEventListener('resize', ajustarEscalaLienzo);
 
-prepararSprites();
-ajustarLienzo();
-ajustarEscalaLienzo();
-comenzar();
-requestAnimationFrame(bucle);
+// ============================================================
+//  El telón de carga
+//  Levantar la senda no es instantáneo: hay que hornear las figuras, tallar el
+//  recinto entero en su lienzo y sembrar el ambiente, y todo eso va en el mismo
+//  hilo. Antes ese rato se pasaba mirando un marcador a cero sobre negro; ahora
+//  lo tapa el telón que html/game.html trae puesto desde el primer instante.
+//
+//  Dos reglas lo gobiernan: no se retira hasta que todo está en pie, y no se
+//  retira antes de la espera mínima, para que en una máquina que carga en un
+//  suspiro no dé un tirón. La espera se cuenta desde que se abrió la página
+//  -que es lo que performance.now() mide-, no desde aquí: lo que el jugador
+//  aguanta es la pantalla entera, no el último tramo.
+// ============================================================
+const ESPERA_CARGA = 5000;        // lo menos que dura el telón, en ms desde que se abrió la página
+const ESPERA_LETRA = 3000;        // lo más que se le espera a la letra de fuera
+
+const telon = document.getElementById('cargando');
+const telonCinta = document.getElementById('cargandoAvance');
+const telonPaso = document.getElementById('cargandoPaso');
+
+// Cada tramo dice en qué anda -el rótulo lo traduce idiomas.js- y lo hace. El
+// último pinta el primer cuadro: así, cuando el telón se va, debajo ya está la
+// senda y no el lienzo en negro.
+const TRAMOS_CARGA = [
+    ['carga.aceros',     () => { prepararSprites(); }],
+    ['carga.marco',      () => { aplicarVistaFps(); ajustarLienzo(); ajustarEscalaLienzo(); }],
+    ['carga.senda',      () => { comenzar(); }],
+    ['carga.farolillos', () => { pintar(); pintarHud(); pintarMinimapa(); }]
+];
+
+let tramosHechos = 0;
+
+// La cinta no enseña lo hecho, sino lo que de verdad falta: lo más lento de las
+// dos cuentas, el trabajo y la espera. Así llega al final justo cuando el telón
+// se va, en vez de quedarse clavada en el 100 % esperando a la otra.
+function pintarCinta() {
+    if (!telonCinta) return;
+    const porTrabajo = tramosHechos / TRAMOS_CARGA.length;
+    const porTiempo = performance.now() / ESPERA_CARGA;
+    telonCinta.style.width = Math.round(Math.min(1, porTrabajo, porTiempo) * 100) + '%';
+}
+
+function decirTramo(clave) {
+    if (telonPaso) telonPaso.textContent = TR(clave);
+}
+
+// Un respiro para que el navegador llegue a pintar. Sin esto el telón no se
+// vería: el hilo es uno solo, y todo el trabajo iría en la misma tanda.
+//
+// Se espera al cuadro, pero con el reloj de relevo: en una pestaña de fondo no
+// hay cuadros que esperar -el navegador no pinta lo que nadie mira- y sin ese
+// relevo la carga se quedaría parada hasta que el jugador volviera.
+const RELEVO_CUADRO = 120;        // ms que se le dan al cuadro antes de seguir sin él
+
+const respirar = () => new Promise(seguir => {
+    let soltado = false;
+    const soltar = () => { if (!soltado) { soltado = true; seguir(); } };
+    requestAnimationFrame(() => setTimeout(soltar, 0));
+    setTimeout(soltar, RELEVO_CUADRO);
+});
+
+async function arrancar() {
+    // Si algo de esto se tuerce, el telón no se queda puesto: un tropiezo aquí
+    // dejaría al jugador mirando el farolillo para siempre y sin saber por qué.
+    // Se apunta en la consola, se levanta el telón igual y que el bucle diga.
+    try {
+        for (const [clave, tarea] of TRAMOS_CARGA) {
+            decirTramo(clave);
+            pintarCinta();
+            await respirar();      // que se vea el rótulo antes de que el tramo bloquee
+            tarea();
+            tramosHechos++;
+            pintarCinta();
+        }
+
+        // La letra de la casa viene de fuera. Se la espera aquí, tapada, y no
+        // con el marcador ya puesto; pero con tope, que si no llega la partida
+        // no se queda esperándola para siempre. Su tropiezo se recoge aparte:
+        // un navegador que no sepa de document.fonts no puede llevarse por
+        // delante la espera mínima, que va justo debajo.
+        try {
+            await Promise.race([document.fonts.ready,
+                new Promise(seguir => setTimeout(seguir, ESPERA_LETRA))]);
+        } catch (e) { /* sin letra de fuera se sigue igual */ }
+
+        // lo que falte de la espera mínima
+        while (performance.now() < ESPERA_CARGA) {
+            pintarCinta();
+            await respirar();
+        }
+        decirTramo('carga.listo');
+        pintarCinta();
+    } catch (e) {
+        console.error('la carga se torció:', e);
+    }
+
+    if (telon) {
+        telon.classList.add('yendose');
+        // se retira del todo cuando acaba el fundido (.5s en el css)
+        setTimeout(() => { telon.hidden = true; }, 600);
+    }
+
+    // El reloj se pone en hora ahora mismo: si no, el primer cuadro llegaría
+    // con todo el rato de la carga a cuestas y el mundo daría un salto.
+    ultimo = performance.now();
+    proximoCuadro = 0;
+    requestAnimationFrame(bucle);
+}
+
+arrancar();

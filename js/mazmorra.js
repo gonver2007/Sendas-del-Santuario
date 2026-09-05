@@ -318,6 +318,8 @@ function nuevoNivel() {
         entrada.x + entrada.w / 2, entrada.y + entrada.h - 1.5, 0.75);
     J.jugador.x = inicio[0];
     J.jugador.y = inicio[1];
+    J.jugador.antes.x = inicio[0];
+    J.jugador.antes.y = inicio[1];
 
     // ...y se sale por arriba: la puerta preside la última sala
     const salida = salas[salas.length - 1];
@@ -512,6 +514,7 @@ function actualizar(dt, entrada) {
     j.mira = entrada.mira;
     j.cdAtaque -= dt;
     j.golpe -= dt;
+    j.herido -= dt;
     j.invulnerable -= dt;
     j.cdDash -= dt;
     j.dash -= dt;
@@ -534,6 +537,13 @@ function actualizar(dt, entrada) {
         j.corriendo = false;
     }
     aplicarEmpuje(j, dt);
+
+    // Lo que de verdad se ha andado, que no es lo que se quería: contra un muro
+    // se empuja sin avanzar, y midiendo el avance real el paso no patina en el
+    // sitio. Va aparte de andando -que lo dice el mando y es quien manda en el
+    // aliento-: esto es solo de dónde saca la figura la fase de su zancada.
+    j.andado += Math.hypot(j.x - j.antes.x, j.y - j.antes.y);
+    j.antes.x = j.x; j.antes.y = j.y;
 
     // El aliento vuelve solo, pero no siempre al mismo paso: el doble plantado
     // que en marcha, y a cinco veces con los pies en el elixir derramado (cure o
@@ -576,6 +586,7 @@ function actualizar(dt, entrada) {
 // ============================================================
 const MEMORIA_ENEMIGO = 3.5;      // segundos que sigue buscando después de perderte
 const GOLPE_ENEMIGO = 0.25;       // lo que se le ve la pose de descargar el golpe
+const HERIDO_HEROE = 0.25;        // y lo que al héroe se le ve el respingo de recibirlo
 const PASO_RONDA = 0.5;           // lo que anda de ronda, sobre su paso de perseguir
 const RONDA_RADIO = 9;            // lo más lejos que se busca el siguiente tramo
 const RONDA_MINIMO = 2.5;         // y lo más cerca, para que el tramo valga la pena
@@ -852,6 +863,7 @@ function danarJugador(e) {
     if (parado) dano = Math.max(1, Math.round(dano * REDUCCION_GUARDIA));
 
     j.hp -= dano;
+    j.herido = HERIDO_HEROE;
     j.invulnerable = 0.35;
     const dx = j.x - e.x, dy = j.y - e.y, d = Math.hypot(dx, dy) || 1;
     const retroceso = parado ? 2 : 4;
@@ -1222,8 +1234,12 @@ function iniciarPartida() {
         hp: 50, hpMax: 50, dano: 7,
         estamina: ESTAMINA_BASE, estaminaMax: ESTAMINA_BASE,
         alcance: 1.25, arco: 1.0, cadencia: 0.40,
-        cdAtaque: 0, golpe: 0, invulnerable: 0,
+        cdAtaque: 0, golpe: 0, invulnerable: 0, herido: 0,
         cubriendo: false, corriendo: false, enCharco: false, dash: 0, cdDash: 0,
+        // andado es el camino que lleva hecho, de donde sale la fase del paso;
+        // antes, dónde estaba al empezar la vuelta. Lo mismo que llevan las
+        // bestias, y por lo mismo: que las piernas vayan al paso que se anda.
+        andado: 0, antes: { x: 0, y: 0 },
         ex: 0, ey: 0, mira: 0, andando: false, nombre: 'héroe'
     };
     equiparArma(J.jugador);

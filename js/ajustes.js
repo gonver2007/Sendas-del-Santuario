@@ -7,11 +7,15 @@
 const CLAVE_AJUSTES = 'sendas.ajustes';
 // el hud se mide en tantos por ciento de su tamaño de siempre
 const HUD_MIN = 60, HUD_MAX = 160;
+// y el juego igual, pero con muy poca cuerda: pasado de ahí se ve demasiado
+// poca senda por delante (o demasiada, y las figuras quedan de hormiga)
+const JUEGO_MIN = 90, JUEGO_MAX = 110;
 
 // Los valores de casa, los que la regla marca con una muesca. El del hud va un
 // punto crecido (a tamaño exacto el marcador se queda corto) y el maestro a
 // media asta, para dejar sitio a subirlo tanto como a bajarlo.
 const HUD_DE_SERIE = 110;
+const JUEGO_DE_SERIE = 100;
 const VOLUMEN_DE_SERIE = 50;
 
 function ajustesNuevos() {
@@ -23,6 +27,10 @@ function ajustesNuevos() {
         // Aparte de Efectos porque suena en cada golpe
         jugador: 80,    // 0..100, también colgando del maestro
         hud: HUD_DE_SERIE, // 60..160, el tamaño del marcador dentro de la partida
+        // 90..110, cuánto se acerca la cámara: a más, todo más grande y menos
+        // senda a la vista; a menos, al revés
+        juego: JUEGO_DE_SERIE,
+        fps: false,     // el contador de fotogramas, apagado hasta que se pida
         idioma: 'es'    // la lengua en que habla el juego; la lista, en idiomas.js
     };
 }
@@ -57,6 +65,9 @@ const Ajustes = {
             efectos: acotar(guardado.efectos, 0, 100) ?? base.efectos,
             jugador: acotar(guardado.jugador, 0, 100) ?? base.jugador,
             hud: acotar(guardado.hud, HUD_MIN, HUD_MAX) ?? base.hud,
+            juego: acotar(guardado.juego, JUEGO_MIN, JUEGO_MAX) ?? base.juego,
+            // un sí o un no: cualquier otra cosa en el almacén es que no
+            fps: typeof guardado.fps === 'boolean' ? guardado.fps : base.fps,
             // una lengua inexistente no puede dejar el juego mudo
             idioma: (typeof TEXTOS !== 'undefined' && TEXTOS[guardado.idioma])
                 ? guardado.idioma : base.idioma
@@ -82,6 +93,8 @@ const Ajustes = {
     // que no siempre comparte almacén. Cada caja de sonido dice su data-canal.
     aplicarValores(a) {
         document.documentElement.style.setProperty('--escalaHud', a.hud / 100);
+        // el zoom del juego no es css: lo recoge vista.js al medir su lienzo,
+        // que la senda se dibuja a mano y no se deja escalar por fuera
         for (const sonido of document.querySelectorAll('audio, video'))
             sonido.volume = volumenDeCanal(a, sonido.dataset.canal);
     }
@@ -146,7 +159,8 @@ const CONTROLES = [
 // Cada una: [clave, mínimo, máximo, paso] y, opcional, el valor con muesca.
 // El nombre sale del diccionario con 'ajustes.' + la clave.
 const SECCIONES = [
-    ['ajustes.general', [['hud', HUD_MIN, HUD_MAX, 5, HUD_DE_SERIE]]],
+    ['ajustes.general', [['hud', HUD_MIN, HUD_MAX, 5, HUD_DE_SERIE],
+                         ['juego', JUEGO_MIN, JUEGO_MAX, 5, JUEGO_DE_SERIE]]],
     ['ajustes.sonido',  [['volumen', 0, 100, 1, VOLUMEN_DE_SERIE],
                          ['musica', 0, 100, 1],
                          ['efectos', 0, 100, 1],
@@ -222,6 +236,15 @@ function montarAjustes() {
         </div>`;
     };
 
+    // Un sí o un no. Misma rejilla que las demás, con la casilla donde las
+    // reglas ponen su cifra; el cuadro lo dibuja el css, que el de serie trae
+    // la carpintería del sistema y aquí desafinaría.
+    const casilla = clave => `
+        <div class="regla marca${enEspera(clave) ? ' pendiente' : ''}">
+            <label for="ax_${clave}">${TR('ajustes.' + clave)}</label>
+            <input id="ax_${clave}" type="checkbox" data-clave="${clave}"${valor(clave) ? ' checked' : ''}>
+        </div>`;
+
     // El idioma es una lista cerrada, no un recorrido: misma rejilla de dos
     // columnas que las reglas, pero sin riel y sin cifra.
     const desplegable = () => `
@@ -241,7 +264,7 @@ function montarAjustes() {
             <section class="seccion">
                 <h2>${TR(titulo)}</h2>
                 ${reglas.map(regla).join('')}
-                ${titulo === 'ajustes.general' ? desplegable() : ''}
+                ${titulo === 'ajustes.general' ? desplegable() + casilla('fps') : ''}
             </section>`).join('') + `
             <section class="seccion">
                 <h2>${TR('ajustes.controles')}</h2>
@@ -263,7 +286,7 @@ function montarAjustes() {
 
     // Arrastrar mueve la cifra pero no toca el juego. La fila se marca aparte
     // para ver de un vistazo cuáles quedan por aplicar.
-    for (const riel of caja.querySelectorAll('input[data-clave]')) {
+    for (const riel of caja.querySelectorAll('input[type="range"][data-clave]')) {
         const clave = riel.dataset.clave;
         const cifra = caja.querySelector(`output[for="${riel.id}"]`);
         riel.addEventListener('input', () => {
@@ -280,6 +303,17 @@ function montarAjustes() {
         const fila = menu.parentElement;
         if (fila) fila.classList.toggle('pendiente', enEspera('idioma'));
     });
+
+    // Las casillas no se arrastran: se marcan y basta, pero se anotan igual
+    // que un riel y esperan al APLICAR como todo lo demás.
+    for (const marca of caja.querySelectorAll('input[type="checkbox"][data-clave]')) {
+        const clave = marca.dataset.clave;
+        marca.addEventListener('change', () => {
+            anotar(clave, marca.checked, a[clave]);
+            const fila = marca.parentElement;
+            if (fila) fila.classList.toggle('pendiente', enEspera(clave));
+        });
+    }
 
     const aplicar = document.getElementById('axAplicar');
     if (aplicar) aplicar.addEventListener('click', aplicarPendientes);

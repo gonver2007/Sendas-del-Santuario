@@ -21,6 +21,7 @@ que cada arme tanga un atributo de consumo de estamina por hit y que no cambie c
 
 -amuletos- 
 sole te puedes equipar como maximo 2 que pordefecto solo te puedas equipar 1 y que para mejorarlo a 2 tengas que usar 20 jade y se optienen tras matar a un jefe
+
 1. si dejas el click pulsado el daño se va multripicando poco a poco hasta llegar a el triple de su daño que para llegar a su triple tengas que estar con el click mantenido y golpeando a enemigos sin parar durante 5 segundos y para llegar a el doble 4 segundos y los decimales te los dejo a ti 
 
 -pergaminos- 

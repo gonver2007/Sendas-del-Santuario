@@ -123,6 +123,8 @@ es: {
     'ajustes.sonido': 'SONIDO',
     'ajustes.controles': 'CONTROLES',
     'ajustes.hud': 'Tamaño del HUD',
+    'ajustes.juego': 'Tamaño del juego',
+    'ajustes.fps': 'Ver FPS',
     'ajustes.idioma': 'Idioma',
     'ajustes.volumen': 'Volumen maestro',
     'ajustes.musica': 'Música',
@@ -147,6 +149,15 @@ es: {
     'tecla.clicDer': 'clic derecho',
     'tecla.mayus': 'Mayús',
     'tecla.espacio': 'Espacio',
+
+    // ---------- el telón de carga ----------
+    'carga.titulo': 'CARGANDO',
+    'carga.lema': 'El farolillo se enciende. Aguarda un momento.',
+    'carga.aceros': 'Afilando los aceros',
+    'carga.marco': 'Tendiendo el lienzo',
+    'carga.senda': 'Levantando la senda',
+    'carga.farolillos': 'Encendiendo los farolillos',
+    'carga.listo': 'La puerta se abre',
 
     // ---------- la senda ----------
     'hud.pv': 'PV',
@@ -304,6 +315,8 @@ en: {
     'ajustes.sonido': 'SOUND',
     'ajustes.controles': 'CONTROLS',
     'ajustes.hud': 'HUD size',
+    'ajustes.juego': 'Game size',
+    'ajustes.fps': 'Show FPS',
     'ajustes.idioma': 'Language',
     'ajustes.volumen': 'Master volume',
     'ajustes.musica': 'Music',
@@ -325,6 +338,15 @@ en: {
     'tecla.clicDer': 'right click',
     'tecla.mayus': 'Shift',
     'tecla.espacio': 'Space',
+
+    // ---------- the loading curtain ----------
+    'carga.titulo': 'LOADING',
+    'carga.lema': 'The lantern is being lit. Wait a moment.',
+    'carga.aceros': 'Sharpening the blades',
+    'carga.marco': 'Stretching the canvas',
+    'carga.senda': 'Raising the path',
+    'carga.farolillos': 'Lighting the lanterns',
+    'carga.listo': 'The door opens',
 
     'hud.pv': 'HP',
     'hud.enemigos': 'ENEMIES REMAINING',

@@ -125,6 +125,19 @@ canvas#vista {
 
 #cedula { justify-self: start; }
 
+/* El contador de fotogramas: cuarto hijo de la rejilla, o sea segunda fila y
+   columna de la izquierda, justo debajo de la cédula. Ahí queda arriba a la
+   izquierda sin taparle a nadie los puntos de vida. Cifras de ancho fijo para
+   que el rótulo no baile al pasar de 99 a 100. */
+#fps {
+    grid-column: 1; justify-self: start;
+    margin-top: 8px; padding: 5px 11px;
+    font-size: 12px; letter-spacing: .1em;
+    color: var(--oroViejo);
+    font-variant-numeric: tabular-nums;
+}
+#fps[hidden] { display: none; }
+
 #estadoPv {
     display: flex; align-items: baseline; gap: 6px;
     margin-bottom: 7px;
@@ -651,6 +664,40 @@ body.santuario .panel.ajustes {
 /* el desplegado sí lo pinta el sistema: se le da al menos fondo oscuro para
    que no salte a blanco en mitad del ocaso */
 .ajustes .regla.lista select option { background: #1c0e16; color: #f2e4d6; }
+/* La casilla: el mismo cuadro de laca con filete de oro que todo lo demás,
+   dibujado a mano por lo mismo que el desplegable -la de serie la pinta el
+   sistema y no hay dos iguales-. La marca es una uve de dos trazos, girada,
+   que solo aparece cuando está encendida. */
+.ajustes .regla.marca input[type="checkbox"] {
+    -webkit-appearance: none; appearance: none;
+    margin: 0; width: 17px; height: 17px;
+    border: 2px solid rgba(232, 180, 79, .35);
+    border-radius: 2px;
+    background: rgba(12, 6, 14, .55);
+    cursor: pointer;
+    position: relative;
+}
+.ajustes .regla.marca input[type="checkbox"]:hover,
+.ajustes .regla.marca input[type="checkbox"]:focus-visible {
+    border-color: var(--oro);
+    outline: none;
+}
+.ajustes .regla.marca input[type="checkbox"]:checked {
+    border-color: var(--oro);
+    box-shadow: inset 0 0 0 1px rgba(232, 180, 79, .22);
+}
+.ajustes .regla.marca input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute; left: 4px; top: 0;
+    width: 5px; height: 10px;
+    border: solid var(--oroViejo);
+    border-width: 0 2px 2px 0;
+    transform: rotate(42deg);
+}
+/* encendida y sin aplicar, la marca se pone del oro vivo como las cifras */
+.ajustes .regla.marca.pendiente input[type="checkbox"] { border-color: var(--oro); }
+.ajustes .regla.marca.pendiente input[type="checkbox"]:checked::after { border-color: var(--oro); }
+
 .ajustes .regla output {
     color: var(--oroViejo); font-weight: 700;
     padding: 2px 8px; border-radius: 2px;
@@ -2299,3 +2346,149 @@ body.santuario .armeria .armas::-webkit-scrollbar-thumb:hover {
 /* la cifra no lleva filete de serie, así que se le pone aquí para que el
    resalte se le note igual que al desplegable */
 .ajustes .regla.pendiente output { border: 1px solid var(--oro); }
+
+/* ============================================================
+   El telón de carga
+   Levantar la senda lleva su rato -hornear las figuras, tallar el recinto
+   entero en su lienzo, sembrar el ambiente- y ese rato se pasaba mirando un
+   marcador a cero sobre negro. El telón lo tapa con el mismo ocaso de la
+   portada: laca de ciruela, oro viejo, mincho muy abierto y un chōchin
+   colgado que se mece. Quien lo pone y lo quita es vista.js.
+   ============================================================ */
+#cargando {
+    position: fixed; inset: 0; z-index: 60;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background:
+        radial-gradient(circle at 50% 42%, #3a1a20 0%, #20101a 48%, #120a10 100%);
+    color: var(--ceniza);
+    /* el telón no se toca: lo único que hace es tapar */
+    cursor: default;
+    transition: opacity .5s ease;
+}
+#cargando[hidden] { display: none; }
+/* al retirarse se va con un fundido, que debajo ya está la senda pintada */
+#cargando.yendose { opacity: 0; pointer-events: none; }
+
+/* ---------- el farolillo ---------- */
+/* Un chōchin colgado de su cuerda: papel encendido, varillas cruzadas y las
+   dos tapas de laca. Se mece despacio y respira, para que se note que la
+   pantalla está viva y no clavada. */
+#cargando .farol {
+    position: relative;
+    width: 64px; height: 116px;
+    margin-bottom: 26px;
+    transform-origin: 50% 0;
+    animation: farolMece 3.4s ease-in-out infinite;
+}
+#cargando .farol .cuerda {
+    position: absolute; left: 50%; top: 0;
+    width: 2px; height: 26px; margin-left: -1px;
+    background: linear-gradient(180deg, rgba(232, 180, 79, 0), var(--oroViejo));
+}
+#cargando .farol .cuerpo {
+    position: absolute; left: 0; right: 0; top: 24px; bottom: 0;
+    border-radius: 50% / 42%;
+    /* el papel: brasa por dentro, oro en el borde, y las varillas encima */
+    background:
+        repeating-linear-gradient(180deg,
+            rgba(26, 15, 22, .32) 0 1px, rgba(26, 15, 22, 0) 1px 9px),
+        radial-gradient(circle at 50% 42%,
+            #ffe9b0 0%, var(--oro) 34%, #f0913f 68%, var(--brasaHonda) 100%);
+    box-shadow:
+        0 0 40px rgba(255, 176, 80, .55),
+        0 0 90px rgba(217, 75, 51, .35),
+        inset 0 -10px 22px rgba(165, 39, 28, .45);
+    animation: farolRespira 2.6s ease-in-out infinite;
+}
+/* las dos tapas de laca, arriba y abajo */
+#cargando .farol .cuerpo::before,
+#cargando .farol .cuerpo::after {
+    content: '';
+    position: absolute; left: 50%;
+    width: 26px; height: 7px; margin-left: -13px;
+    border-radius: 2px;
+    background: var(--ciruela);
+    box-shadow: 0 0 0 1px rgba(232, 180, 79, .5);
+}
+#cargando .farol .cuerpo::before { top: -4px; }
+#cargando .farol .cuerpo::after  { bottom: -4px; }
+
+@keyframes farolMece {
+    0%, 100% { transform: rotate(-3.5deg); }
+    50%      { transform: rotate(3.5deg); }
+}
+@keyframes farolRespira {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.14); }
+}
+
+/* ---------- lo que se lee ---------- */
+/* el mismo rótulo de varillas del santuario, que aquí no hay body.santuario
+   que lo traiga */
+#cargando .rotulo {
+    display: flex; align-items: center; justify-content: center;
+    gap: 18px; margin-bottom: 14px;
+}
+#cargando .rotulo::before,
+#cargando .rotulo::after {
+    content: ''; width: 70px; height: 2px;
+}
+#cargando .rotulo::before { background: linear-gradient(90deg, rgba(232, 180, 79, 0), var(--oroViejo)); }
+#cargando .rotulo::after  { background: linear-gradient(90deg, var(--oroViejo), rgba(232, 180, 79, 0)); }
+#cargando .rotulo span {
+    font-family: "Shippori Mincho B1", "Yu Mincho", serif;
+    font-weight: 700; font-size: 18px;
+    letter-spacing: .42em; text-indent: .42em;
+    color: var(--oroViejo);
+}
+
+/* el mismo trazo que HAS CAÍDO y que el rótulo de la portada */
+#cargando h1 {
+    margin: 0;
+    font-family: "Shippori Mincho B1", "Yu Mincho", serif;
+    font-weight: 800; font-size: 42px;
+    letter-spacing: .2em; text-indent: .2em;
+    color: var(--hueso);
+    text-shadow: 0 0 40px rgba(217, 75, 51, .5), 4px 5px 0 var(--brasaHonda);
+}
+#cargando .lema {
+    margin: 16px 0 0;
+    font-size: 14px; letter-spacing: .1em;
+    color: rgba(242, 228, 214, .62);
+}
+
+/* ---------- la cinta ---------- */
+/* La misma ranura de laca de las barras del marcador, más larga. No enseña
+   solo lo hecho: enseña lo más lento de las dos cuentas -el trabajo y la
+   espera mínima-, así que llega al final justo cuando el telón se va. */
+#cargando .cinta {
+    width: min(420px, 62vw); height: 10px;
+    margin-top: 28px;
+    border: 2px solid rgba(232, 180, 79, .35);
+    border-radius: 2px;
+    background: rgba(12, 6, 14, .7);
+    overflow: hidden;
+}
+#cargando .cinta > i {
+    display: block; width: 0; height: 100%;
+    background: linear-gradient(180deg, var(--brasa), var(--brasaHonda));
+    box-shadow: 0 0 14px rgba(217, 75, 51, .6);
+    transition: width .3s ease;
+}
+
+/* en qué anda ahora mismo; con hueco reservado para que la línea no baile
+   al cambiar de tramo */
+#cargando .paso {
+    min-height: 1.2em;
+    margin: 14px 0 0;
+    font-size: 12px; letter-spacing: .22em; text-indent: .22em;
+    text-transform: uppercase;
+    color: var(--oroViejo);
+}
+
+/* quien no quiera movimiento, que no lo tenga: el telón sigue cumpliendo */
+@media (prefers-reduced-motion: reduce) {
+    #cargando .farol,
+    #cargando .farol .cuerpo { animation: none; }
+}
